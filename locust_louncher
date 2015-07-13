@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# launcher script for slave locust machine.
+# It allows you to specify locust_scenario_file, master host machine, number of locust instances to launch
+#Taking all necessary parameters script launches locust-instances, creates log file in ~/load/log/, and
+#starts to read from it with "tail" command
+#Author: Vasyl Horokhovskyi
+
+
+NUMBER_OF_INSTANCES=$(nproc --all)
+if [ $# -eq 0 ];then
+   echo "No arguments are provided. Please provide full set of requireq arguments--you can see them in a help page"
+   exit
+fi
+while test $# -gt 0; do
+        case "$1" in
+                -h|--help)
+                        echo ""
+                        echo "=================================================="
+                        echo "This is launcher script for slave locust machines."
+                        echo "It allows (and demands) you to specify locust_scenario_file, master host machine. Also it possible to specify optional parameter--number of locust instances."
+                        echo "Please note: number of locust instances is optional parameter. By default it will use the number equal to number of cores of current machine"
+                        echo "Taking all necessary parameters, script: launches locust-instances, creates log file in ~/load/log/, and"
+                        echo "starts to read from it with tail command"
+
+                        echo " "
+                        echo "[options] application [arguments]"
+ echo " "
+                        echo "options:"
+                        echo "-h, --help                               show brief help"
+                        echo "-f, --file=LOCUST_FILE_SCENARIO          specify a locust scenario file to use"
+                        echo "-m, --master_host=IP                     specify an IP of master host machine for locust distributed mode"
+                        echo "-n, --n_instances=NUMBER_OF_INSTANCES    specify number of locust instances to launch."
+                        echo "                                         Ideally it should be equal to machine's logical cores"
+                        exit 0
+                        ;;
+                -f)
+                        shift
+                        if test $# -gt 0; then
+                                FILENAME=$1
+                        else
+                                echo "no scenario file is specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --file*)
+                        FILENAME=$(echo $1 | sed -e 's/^[^=]*=//g')
+                        shift
+                        ;;
+                -m)
+                        shift
+                        if test $# -gt 0; then
+                                MASTER_HOST=$1
+                        else
+ echo "no master host is specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --master-host*)
+                        MASTER_HOST=$(echo $1 | sed -e 's/^[^=]*=//g')
+                        shift
+                        ;;
+
+                -n)
+                        shift
+                        if test $# -gt 0; then
+                                NUMBER_OF_INSTANCES=$1
+                        else
+                                echo "number of locust instances isn't specified"
+                                exit 1
+                        fi
+                        shift
+                        ;;
+                --n_instances*)
+                        NUMBER_OF_INSTANCES=$(echo $1 | sed -e 's/^[^=]*=//g')
+                        shift
+                        ;;
+
+                *)
+                        break
+                        ;;
+        esac
+done
+
+NOW=$(date +"%F_%H-%M")
+FILENAME_FOR_LOG=$(basename "$FILENAME")
+LOGNAME="${FILENAME_FOR_LOG%.*}_$NOW.log"
+PATH_TO_LOG="~/load/log/$LOGNAME"
+mkdir -p "${PATH_TO_LOG%/*}"
+for ((i = 1; i<=$NUMBER_OF_INSTANCES; i++));do
+nohup locust -f $FILENAME --slave --master-host=$MASTER_HOST > $PATH_TO_LOG &
+done
+tail -f $PATH_TO_LOG
