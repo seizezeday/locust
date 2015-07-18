@@ -6,6 +6,9 @@
 #starts to read from it with "tail" command
 #Author: Vasyl Horokhovskyi
 
+#prepare environment for the launch
+ulimit -n 65000 && ulimit -c unlimited
+
 
 NUMBER_OF_INSTANCES=$(nproc --all)
 if [ $# -eq 0 ];then
