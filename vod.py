@@ -136,11 +136,11 @@ class VisonicRestApiLoadScenario(TaskSet):
 
     def make_video(self, camera_id):
         self.client.post("/rest_api/2.0/make_video", headers = {'Session-Token':'%s'%self.client.token},
-                         json={"camera_id":camera_id}, verify=False)
+                         json={"camera_id":"%s"%camera_id}, verify=False, name='make_video. camera #%s'%camera_id)
 
     def on_demand_video_frames(self, camera_id):
         self.client.get("/rest_api/2.0/on_demand_video_frames", headers = {'Session-Token':'%s'%self.client.token},
-                         json={"camera_id":camera_id}, verify=False)
+                         json={"camera_id": "%s"%camera_id}, verify=False)
 
 
     def redirect_to_random_screen(self):
