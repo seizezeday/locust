@@ -9,7 +9,6 @@
 #prepare environment for the launch
 ulimit -n 65000 && ulimit -c unlimited
 
-
 NUMBER_OF_INSTANCES=$(nproc --all)
 if [ $# -eq 0 ];then
    echo "No arguments are provided. Please provide full set of requireq arguments--you can see them in a help page"
