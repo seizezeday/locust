@@ -31,7 +31,9 @@ class VisonicRestApiLoadScenario(TaskSet):
     def login(self):
         if (random.randrange(start=0, stop=LOGIN_WITH_STATIC_FREQUENCY) == (LOGIN_WITH_STATIC_FREQUENCY-1)):
             self.get_static()
-        result = self.client.post("/rest_api/2.0/login", json={"user_id":"%010x" %self.user_id, "panel_web_name":"%06X" %self.panel_web_name, 'user_code':'1111'}, verify=False)
+        result = self.client.post("/rest_api/2.0/login", json={"user_id":"%010x" %self.user_id,
+                                                               "panel_web_name":"%06X" %self.panel_web_name,
+                                                               'user_code':'1111'}, verify=False)
         self.client.token = result.json()['content']
 
 
@@ -41,7 +43,7 @@ class VisonicRestApiLoadScenario(TaskSet):
         self.client.get("/js/vendor/angular-material/angular-material.css", verify = False)
         self.client.get("/css/main.css", verify = False)
         self.client.get("/js/vendor/underscore/underscore-min.js", verify = False)
-        self.client.get("/js/vendor/angular/angular.min.js", verify = False)
+        self.client.get("/js/vendor/angular/angular.min.js", verify = False, name=)
         self.client.get("/js/vendor/angular-cookies/angular-cookies.min.js", verify = False)
         self.client.get("/js/vendor/angular-md5/angular-md5.min.js", verify = False)
         self.client.get("/js/vendor/angular-translate/angular-translate.min.js", verify = False)
@@ -67,15 +69,18 @@ class VisonicRestApiLoadScenario(TaskSet):
 
 
     def get_status(self):
-        self.client.get("/rest_api/2.0/status", headers = {'Session-Token':'%s'%self.client.token}, name = "get_status", verify = False)
+        self.client.get("/rest_api/2.0/status", headers = {'Session-Token':'%s'%self.client.token},
+                        name = "get_status", verify = False)
 
 
     def get_alarms(self):
-        self.client.get("/rest_api/2.0/alarms", headers = {'Session-Token':'%s'%self.client.token}, name = "get_alarms", verify = False)
+        self.client.get("/rest_api/2.0/alarms", headers = {'Session-Token':'%s'%self.client.token},
+                        name = "get_alarms", verify = False)
 
 
     def get_alarm_video(self):
-        self.client.get("/rest_api/2.0/alarm_video", headers = {'Session-Token':'%s'%self.client.token}, name = "get_alarms", verify = False)
+        self.client.get("/rest_api/2.0/alarm_video", headers = {'Session-Token':'%s'%self.client.token},
+                        name = "get_alarms", verify = False)
 
 
     def get_events(self):
@@ -118,6 +123,9 @@ class VisonicRestApiLoadScenario(TaskSet):
     def arm_away_latchkey(self):
         self.client.post("/rest_api/2.0/arm_away_latchkey", headers = {'Session-Token':'%s'%self.client.token}, verify=False)
 
+    def disarm(self):
+        self.client.post("/rest_api/2.0/disarm", headers = {'Session-Token':'%s'%self.client.token}, verify=False)
+
 
 
 
@@ -132,6 +140,33 @@ class VisonicRestApiLoadScenario(TaskSet):
     def redirect_to_random_screen(self):
         func=random.choice([self.alarms_screen, self.events_screen, self.alerts_screen, self.cameras_screen, self.devices_screen])
         func()
+
+    def random_arm(self):
+        arm_scenario_number = random.randrange(start=0,stop=6)
+        if arm_scenario_number == 0:
+            self.arm_away()
+        elif arm_scenario_number == 1:
+            self.arm_home()
+        elif arm_scenario_number == 2:
+            self.arm_away_instant()
+        elif arm_scenario_number == 3:
+            self.arm_home_instant()
+        elif arm_scenario_number == 4:
+            self.arm_away_latchkey()
+        elif arm_scenario_number == 5:
+            self.disarm()
+
+
+    def is_panel_connected(self):
+        response = self.client.get("/rest_api/2.0/status", headers = {'Session-Token':'%s'%self.client.token}, name = "get_status", verify = False)
+        self.status = response.json()['content']['is_connected']
+        if self.status == 1:
+            return True
+        else:
+            return False
+
+
+
 
 
 
@@ -187,9 +222,7 @@ class VisonicRestApiLoadScenario(TaskSet):
     def make_vod(self):
         while(True):
             self.get_alarms()
-            response = self.client.get("/rest_api/2.0/status", headers = {'Session-Token':'%s'%self.client.token}, name = "get_status", verify = False)
-            self.status = response.json()['content']['is_connected']
-            if (self.status == 1):
+            if (self.is_panel_connected()):
                 time.sleep(5)
                 self.make_video()
                 break
@@ -200,26 +233,10 @@ class VisonicRestApiLoadScenario(TaskSet):
     def arm(self):
         while(True):
             self.get_alarms()
-            response = self.client.get("/rest_api/2.0/status", headers = {'Session-Token':'%s'%self.client.token}, name = "get_status", verify = False)
-            self.status = response.json()['content']['is_connected']
-            if (self.status == 1):
+            if (self.is_panel_connected()):
                 time.sleep(5)
-                arm_scenario_number = random.randrange(start=0,stop=5)
-                if arm_scenario_number == 0:
-                    self.arm_away()
-                    break
-                elif arm_scenario_number == 1:
-                    self.arm_home()
-                    break
-                elif arm_scenario_number == 2:
-                    self.arm_away_instant()
-                    break
-                elif arm_scenario_number == 3:
-                    self.arm_home_instant()
-                    break
-                elif arm_scenario_number == 4:
-                    self.arm_away_latchkey()
-                    break
+                self.random_arm()
+                break
 
             else:
                 self.redirect_to_random_screen()
